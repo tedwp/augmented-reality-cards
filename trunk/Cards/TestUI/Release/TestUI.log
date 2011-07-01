@@ -1,0 +1,23 @@
+﻿Build started 6/30/2011 15:39:00.
+     1>Project "C:\Users\Reaveth\Desktop\AR Business Cards\Cards\TestUI\TestUI.vcxproj" on node 2 (build target(s)).
+     1>InitializeBuildStatus:
+         Touching "Release\TestUI.unsuccessfulbuild".
+       ClCompile:
+         All outputs are up-to-date.
+       Link:
+         d:\Program Files\Microsoft\Visual Studio 2010\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\Reaveth\Desktop\AR Business Cards\Cards\Release\TestUI.exe" /INCREMENTAL:NO /NOLOGO cv210.lib cxcore210.lib highgui210.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"Release\TestUI.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"C:\Users\Reaveth\Desktop\AR Business Cards\Cards\Release\TestUI.pdb" /SUBSYSTEM:CONSOLE /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\Reaveth\Desktop\AR Business Cards\Cards\Release\TestUI.lib" /MACHINE:X86 Release\stdafx.obj
+         Release\TestUI.obj
+         "C:\Users\Reaveth\Desktop\AR Business Cards\Cards\Release\SquaresLib.lib"
+         Generating code
+         Finished generating code
+         TestUI.vcxproj -> C:\Users\Reaveth\Desktop\AR Business Cards\Cards\Release\TestUI.exe
+       Manifest:
+         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /outputresource:"C:\Users\Reaveth\Desktop\AR Business Cards\Cards\Release\TestUI.exe;#1" /manifest Release\TestUI.exe.intermediate.manifest
+       FinalizeBuildStatus:
+         Deleting file "Release\TestUI.unsuccessfulbuild".
+         Touching "Release\TestUI.lastbuildstate".
+     1>Done Building Project "C:\Users\Reaveth\Desktop\AR Business Cards\Cards\TestUI\TestUI.vcxproj" (build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:01.53
