@@ -4,11 +4,20 @@
 #include <highgui.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <time.h>
 
+//FOR FPS ONLY
+time_t start, end;
+double FPS;
+int counter = 0;
+double sec;
+extern "C" __declspec(dllexport) double GetFPS();
 
 CvCapture		*capture;
 IplImage		*frame;
+IplImage		*gray;
 IplImage		*thresh;
+IplImage		*threshCont;
 CvMemStorage	*storage;
 
 IplImage		*imgTemplate0;
@@ -16,14 +25,28 @@ IplImage		*imgTemplate1;
 IplImage		*imgTemplate2;
 IplImage		*imgTemplate3;
 
-int				markerSize = 100;
+int				count = 4;
+int				markerSide = 100;
+CvSize			markerSize = cvSize(markerSide,markerSide);
 double			maxVal;
 int				markerRotation;
+CvPoint			finalSquare[4];
+CvSeq			*contours;
+CvSeq			*contoursResult;
+CvSeq			*squares;
+bool			show;
 
 // Externals //
 extern "C" __declspec(dllexport) bool Initialize();
+extern "C" __declspec(dllexport) void Detect();
+extern "C" __declspec(dllexport) IplImage* GetFrame();
+extern "C" __declspec(dllexport) void ShowFrame();
+extern "C" __declspec(dllexport) bool Finalize();
 
 
 // Internals//
+void Threshold(IplImage * input);
 void LoadTemplates();
-void Rotate(IplImage * rot, float angle, IplImage * out, CvSize SizeRotated);
+void Rotate(IplImage * input, float angle, IplImage * out, CvSize SizeRotated);
+void FindContours(IplImage * in, int approx);
+void DrawSquares( IplImage* input, CvSeq* squares );
