@@ -12,6 +12,7 @@ bool Initialize()
 
 	cvNamedWindow( "Detection", CV_WINDOW_AUTOSIZE );
 	cvNamedWindow( "Threshold", CV_WINDOW_AUTOSIZE );
+	cvNamedWindow( "Processing", CV_WINDOW_AUTOSIZE );
 	show = true;
 
 	//optional camera input resize
@@ -50,7 +51,48 @@ void Detect()
 	Threshold(GetFrame());
 	FindContours(thresh, 5);
 	DrawSquares(frame,squares);
-	//ExtractMarkers();
+	MatchMarkers(imgProc);
+
+
+}
+
+double MatchMarkers(IplImage *input)
+{
+	double MaxVal[4];
+	double maxVal=0, minVal=0;
+	//template matching
+	cvZero(imgResult);
+	cvMatchTemplate(input, imgTemplate0, imgResult, CV_TM_CCORR_NORMED);
+	CvPoint minLoc, maxLoc;
+	//finding max match value
+	cvMinMaxLoc(imgResult, &minVal, &MaxVal[0], &minLoc, &maxLoc);
+
+	cvZero(imgResult);
+	cvMatchTemplate(input, imgTemplate1, imgResult, CV_TM_CCORR_NORMED);
+	//finding max match value
+	cvMinMaxLoc(imgResult, &minVal, &MaxVal[1], &minLoc, &maxLoc);
+
+	cvZero(imgResult);
+	cvMatchTemplate(input, imgTemplate2, imgResult, CV_TM_CCORR_NORMED);
+	//finding max match value
+	cvMinMaxLoc(imgResult, &minVal, &MaxVal[2], &minLoc, &maxLoc);
+
+	cvZero(imgResult);
+	cvMatchTemplate(input, imgTemplate3, imgResult, CV_TM_CCORR_NORMED);
+	//finding max match value
+	cvMinMaxLoc(imgResult, &minVal, &MaxVal[3], &minLoc, &maxLoc);
+
+	for(int i=0; i<4; i++)
+	{
+		if(maxVal<MaxVal[i])
+		{
+			maxVal = MaxVal[i];
+			markerRotation = i;
+		}
+	}
+	
+
+	return maxVal;
 }
 
 
@@ -106,6 +148,18 @@ void DrawSquares( IplImage* input, CvSeq* squares )
 	CvSeqReader reader;
 	cvStartReadSeq( squares, &reader, 0 );
 	//system("cls");
+
+
+	
+	CvMat* warp_matrix = cvCreateMat(3,3,CV_32FC1);
+	CvPoint2D32f squareCorners[4],procCorners[4];
+	imgProc = cvCreateImage( markerSize, 8, 1 );
+			double maxval;
+			double returnmarkerRotation;
+			double tmp;
+			tmp=0;
+			maxval=0;
+			IplImage* Result = cvCreateImage( markerSize, 8,1);
 	// read 4 sequence elements at a time (all vertices of a square)
 	for(int i = 0; i < squares->total; i += 4 )
 	{
@@ -118,26 +172,126 @@ void DrawSquares( IplImage* input, CvSeq* squares )
 		CV_READ_SEQ_ELEM( corners[3], reader );
 		//printf("Square:\n corner1: x:%d, y:%d\n corner2: x:%d, y:%d\n corner3: x:%d, y:%d\n corner4: x:%d, y:%d\n\n", pt[0].x, pt[0].y, pt[1].x, pt[1].y, pt[2].x, pt[2].y, pt[3].x, pt[3].y);
 
+		// found square corners
+		squareCorners[0].x= corners[0].x;
+		squareCorners[0].y= corners[0].y;
+		squareCorners[1].x= corners[1].x;
+		squareCorners[1].y= corners[1].y;
+
+		squareCorners[2].x= corners[2].x;
+		squareCorners[2].y= corners[2].y;
+		squareCorners[3].x= corners[3].x;
+		squareCorners[3].y= corners[3].y;
+
+		// Processed image corners (same as the template ones)
+		procCorners[0].x= 0;
+		procCorners[0].y= 0;
+		procCorners[1].x= markerSide;
+		procCorners[1].y= 0;
+    
+		procCorners[2].x= markerSide;
+		procCorners[2].y= markerSide;
+		procCorners[3].x= 0;
+		procCorners[3].y= markerSide;
+
+		// Square transforming to processed image using warp matrix
+		cvGetPerspectiveTransform(squareCorners,procCorners,warp_matrix);
+		cvZero(imgProc);
+		cvWarpPerspective( thresh, imgProc, warp_matrix);
+
         // draw the square as a closed polyline (for debug purposes only)
-        cvPolyLine( input, &rectangle, &count, 1, 1, CV_RGB(0,255,0), 3, CV_AA, 0 );
+       // cvPolyLine( input, &rectangle, &count, 1, 1, CV_RGB(0,255,0), 3, CV_AA, 0 );
+
+		tmp = MatchMarkers(imgProc);
+		if(maxval < tmp )
+		{
+			maxval = tmp;
+			returnmarkerRotation = markerRotation;
+			cvCopyImage(imgProc, Result);
+			finalSquare[0] = corners[0];
+			finalSquare[1] = corners[1];
+			finalSquare[2] = corners[2];
+			finalSquare[3] = corners[3];
+		}
+	}
+		IplImage* imgDisplay2 = cvCreateImage(  cvGetSize(imgDisplay),8, 3 );
+		maxval=maxval*100;
+		if(maxval>75)
+		{
+		float angle = returnmarkerRotation * 90;
+		Rotate(imgDisplay,angle,imgDisplay2, cvGetSize(imgDisplay));
+		//printf("MaxVal = %.2f%%, Marker found: Side =  %d\n", maxval, returnmarkerRotation);
+		cvShowImage("Display", imgDisplay);
+		visualize(frame,imgDisplay2,finalSquare);
+		cvShowImage( "Processing", Result );
+		
     }
+	
+   cvShowImage( "Processing", imgProc);
    cvShowImage( "Detection", input );
 }
 
 
+void visualize(IplImage* input, IplImage* imgDisplay2, CvPoint corners[4])
+{
+	CvMat* warp_matrix = cvCreateMat(3,3,CV_32FC1);
+	IplImage *neg_img,*cpy_img;
+	cpy_img = cvCreateImage( cvGetSize(input), 8, 3 );
+    neg_img = cvCreateImage( cvGetSize(input), 8, 3 );
+	CvPoint2D32f destCorners[4];
+	CvPoint2D32f imgCorners[4];
+	CvSize displaySize = cvGetSize(imgDisplay2);
+	IplImage* blank  = cvCreateImage( displaySize, 8, 3);
+	cvZero(blank);
+	cvNot(blank,blank);
+
+	imgCorners[0].x=  0;
+	imgCorners[0].y=  0;
+	imgCorners[1].x=  displaySize.width;
+	imgCorners[1].y=  0;
+
+	imgCorners[2].x=  displaySize.width;
+	imgCorners[2].y=  displaySize.height;
+	imgCorners[3].x=  0;
+	imgCorners[3].y=  displaySize.height;
+
+
+	destCorners[0].x= corners[0].x;
+	destCorners[0].y= corners[0].y;
+	destCorners[1].x= corners[1].x;
+	destCorners[1].y= corners[1].y;
+				
+	destCorners[2].x= corners[2].x;
+	destCorners[2].y= corners[2].y;
+	destCorners[3].x= corners[3].x;
+	destCorners[3].y= corners[3].y;
+
+	cvGetPerspectiveTransform(imgCorners,destCorners,warp_matrix);
+	cvZero(neg_img);
+	cvZero(cpy_img);
+
+	cvWarpPerspective( imgDisplay2, neg_img, warp_matrix);
+	cvWarpPerspective( blank, cpy_img, warp_matrix);
+	cvNot(cpy_img,cpy_img);
+
+	cvAnd(cpy_img,input,cpy_img);
+	cvOr(cpy_img,neg_img,input);
+}
+
 
 void LoadTemplates()
 {
-	imgTemplate1 = cvLoadImage("\Images\marker.jpg", 0);
+	imgDisplay = cvLoadImage("C:\\image.jpg",1);
+	imgTemplate0 = cvLoadImage("C:\\marker.jpg", 0);
 	imgTemplate1 = cvCreateImage( markerSize,8, 1 );
 	imgTemplate2  = cvCreateImage( markerSize,8, 1 );
 	imgTemplate3  = cvCreateImage( markerSize,8, 1 );
-	Rotate(imgTemplate1, 90, imgTemplate1,markerSize);
-	Rotate(imgTemplate1, 180, imgTemplate2,markerSize);
-	Rotate(imgTemplate1, 270, imgTemplate3,markerSize);
+	Rotate(imgTemplate0, 90, imgTemplate1,markerSize);
+	Rotate(imgTemplate0, 180, imgTemplate2,markerSize);
+	Rotate(imgTemplate0, 270, imgTemplate3,markerSize);
 }
 
-void Rotate(IplImage * input, float angle, IplImage * out, CvSize sizeRotated)
+void Rotate(IplImage * input, float angle, IplImage * output, CvSize sizeRotated)
 {
 	float matrix[6];
 	CvMat mapMatrix = cvMat(2, 3, CV_32F, matrix);
@@ -149,7 +303,7 @@ void Rotate(IplImage * input, float angle, IplImage * out, CvSize sizeRotated)
 	matrix[2] = sizeRotated.width*0.5f;  
 	matrix[5] = sizeRotated.height*0.5f;
 	
-	cvGetQuadrangleSubPix( input, out, &mapMatrix);
+	cvGetQuadrangleSubPix( input, output, &mapMatrix);
 }
 
 
