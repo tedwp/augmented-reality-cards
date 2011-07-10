@@ -27,6 +27,7 @@ int main(int argc, _TCHAR* argv[])
       FPS = counter / sec;
 
 
+	
 		Detect();
 		ShowFrame();
 		key = cvWaitKey(1);
