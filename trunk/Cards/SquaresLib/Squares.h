@@ -11,7 +11,7 @@ time_t start, end;
 double FPS;
 int counter = 0;
 double sec;
-extern "C" __declspec(dllexport) double GetFPS();
+extern "C" __declspec(dllexport) void GetFPS();
 
 CvCapture		*capture;
 CvCapture		*vidCapture;
@@ -25,6 +25,7 @@ CvMemStorage	*storage;
 IplImage		*imgResult = cvCreateImage(cvSize(1, 1),  IPL_DEPTH_32F, 1);
 
 IplImage		*vidFrame;
+IplImage		*vidFrame2;
 IplImage		*imgDisplay;
 IplImage		*imgTemplate0;
 IplImage		*imgTemplate1;
@@ -50,7 +51,6 @@ extern "C" __declspec(dllexport) bool Initialize();
 extern "C" __declspec(dllexport) void Detect();
 extern "C" __declspec(dllexport) IplImage* GetFrame();
 extern "C" __declspec(dllexport) IplImage* GetVideoFrame();
-extern "C" __declspec(dllexport) void ShowFrame();
 extern "C" __declspec(dllexport) bool Finalize();
 
 // Internals//

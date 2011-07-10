@@ -6,6 +6,7 @@
 
 bool Initialize()
 {
+	time(&start);
 	displayMode=1;
 	capture = cvCaptureFromCAM( 0 );
 	if(!capture)
@@ -45,8 +46,8 @@ IplImage* GetVideoFrame()
 {
 	vidFrame = cvQueryFrame(vidCapture);
 	if (!vidFrame)
-			return NULL;
-
+		return vidFrame2;
+	vidFrame2 = vidFrame;
 	return vidFrame;
 }
 
@@ -132,24 +133,19 @@ double MatchMarkers(IplImage *input)
 }
 
 
-void ShowFrame()
+void GetFPS()
 {
-	CvPoint * rect = finalSquare;
-	int count = 4;
-	CvSeqReader reader;
-	cvStartReadSeq(squares, &reader);
-	if(show == true)
-	{
-		IplImage *frameCpy = cvCreateImage(cvSize(frame->width, frame->height), frame->depth, 3);
-		cvCopy(frame, frameCpy);
-		cvPolyLine( frameCpy, &rect, &count, 1, 1, CV_RGB(0,255,0), 3, CV_AA, 0 );
-
-		//cvShowImage("Display", frame);
-		cvShowImage("Threshold", thresh);
-		cvReleaseImage(&frameCpy);
-	}
+	  time(&end);
+      ++counter;
+      sec = difftime (end, start); 
+	  if(sec == 5)
+	  {
+		  printf("FPS = %.2f\n", FPS);
+		  counter= 0;
+		  time(&start);
+	  }
+      FPS = counter / sec;
 }
-
 
 void FindContours(IplImage * input, int approx)
 {
