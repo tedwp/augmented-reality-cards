@@ -60,6 +60,7 @@ void Threshold(IplImage *input)
 		gray = cvCreateImage( cvSize(input->width, input->height), 8, 1 );
 	cvCvtColor(input,gray,CV_BGR2GRAY);
 	cvThreshold(gray, thresh, 100, 255, CV_THRESH_BINARY);
+	cvShowImage( "Threshold", thresh );
 }
 
 void Detect()
@@ -184,13 +185,12 @@ void DetectSquares( IplImage* input, CvSeq* squares )
 	//system("cls");
 
 
-
 	CvMat* warp_matrix = cvCreateMat(3,3,CV_32FC1);
 	CvPoint2D32f squareCorners[4],procCorners[4];
 	if(!imgProc)
 		imgProc = cvCreateImage(markerSize, 8, 1 );
-	double tmp;
-	tmp=0;
+	double tmp=0;
+	CvRect boundbox;
 	maxVal=0;
 	IplImage* Result = cvCreateImage( markerSize, 8,1);
 	// read 4 sequence elements at a time (all vertices of a square)
@@ -227,14 +227,17 @@ void DetectSquares( IplImage* input, CvSeq* squares )
 		procCorners[3].x= 0;
 		procCorners[3].y= markerSide;
 
-
-
 		// Square transforming to processed image using warp matrix	
+		
+		Crop(squareCorners,&boundbox);
+
+		cvSetImageROI(thresh,boundbox);
+		//cvShowImage( "Proc", thresh);
+
 		cvGetPerspectiveTransform(squareCorners,procCorners,warp_matrix);
-		cvZero(imgProc);
-		//cvSetImageROI(thresh,cvBoundingRect(,1));
+		cvZero(imgProc); 		
 		cvWarpPerspective( thresh, imgProc, warp_matrix);
-		//cvResetImageROI(thresh);
+		cvResetImageROI(thresh);
 		// draw the square as a closed polyline (for debug purposes only)
 		// cvPolyLine( input, &rectangle, &count, 1, 1, CV_RGB(0,255,0), 3, CV_AA, 0 );
 
@@ -250,11 +253,44 @@ void DetectSquares( IplImage* input, CvSeq* squares )
 			finalSquare[3] = corners[3];
 		}
 	}
-	cvShowImage( "Processing", Result);
+	cvShowImage( "Processing", imgProc);
 	cvReleaseMat(&warp_matrix);
 	cvReleaseImage(&Result);
 }
 
+
+void Crop(CvPoint2D32f* squareCorners, CvRect* boundbox)
+{
+		float cornersx[4],cornersy[4];
+		int minx=1000,maxx=0,miny=1000,maxy=0;
+
+		for (int j=0;j<4;j++)
+		{
+			cornersx[j] = squareCorners[j].x;
+			cornersy[j] = squareCorners[j].y;
+		}
+
+		for (int j=0;j<4;j++)
+		{
+			if(minx>cornersx[j])
+				minx=cornersx[j];
+			if(maxx<cornersx[j])
+				maxx=cornersx[j];
+			if(miny>cornersy[j])
+				miny=cornersy[j];
+			if(maxy<cornersy[j])
+				maxy=cornersy[j];
+		}
+		int rectwidth = maxx-minx;
+		int rectheight = maxy-miny;
+		*boundbox=cvRect(minx,miny,rectwidth,rectheight);
+
+		for(int j=0;j<4;j++)
+		{
+			squareCorners[j].x -= minx;
+			squareCorners[j].y -= miny;
+		}
+}
 
 void Visualize(IplImage* input, IplImage* imgDisplay2, CvPoint corners[4])
 {
