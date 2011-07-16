@@ -12,7 +12,7 @@ bool Initialize()
 	if(!capture)
 		return false;
 
-	vidCapture = cvCreateFileCapture("..\\Images\\trailer2.mpg");
+	vidCapture = cvCreateFileCapture("..\\Images\\trailer.avi");
 	if(!vidCapture)
 		return false;
 
@@ -59,7 +59,7 @@ void Threshold(IplImage *input)
 	if(!gray)
 		gray = cvCreateImage( cvSize(input->width, input->height), 8, 1 );
 	cvCvtColor(input,gray,CV_BGR2GRAY);
-	cvThreshold(gray, thresh, 100, 255, CV_THRESH_BINARY);
+	cvAdaptiveThreshold(gray, thresh, 255, CV_THRESH_BINARY, CV_ADAPTIVE_THRESH_MEAN_C, 201, 5);
 	cvShowImage( "Threshold", thresh );
 }
 
