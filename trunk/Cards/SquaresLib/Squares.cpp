@@ -7,12 +7,12 @@
 bool Initialize()
 {
 	time(&start);
-	displayMode=1;
+	displayMode=0;
 	capture = cvCaptureFromCAM( 0 );
 	if(!capture)
 		return false;
 
-	vidCapture = cvCreateFileCapture("..\\Images\\trailer.avi");
+	vidCapture = cvCreateFileCapture("..\\Images\\trailer2.mpg");
 	if(!vidCapture)
 		return false;
 
@@ -59,7 +59,7 @@ void Threshold(IplImage *input)
 	if(!gray)
 		gray = cvCreateImage( cvSize(input->width, input->height), 8, 1 );
 	cvCvtColor(input,gray,CV_BGR2GRAY);
-	cvAdaptiveThreshold(gray, thresh, 255, CV_THRESH_BINARY, CV_ADAPTIVE_THRESH_MEAN_C, 201, 5);
+	cvAdaptiveThreshold(gray, thresh, 255, CV_THRESH_BINARY, CV_ADAPTIVE_THRESH_MEAN_C, 251, 5);
 	cvShowImage( "Threshold", thresh );
 }
 
@@ -84,7 +84,7 @@ void VisualizeSquares(IplImage* input,int angle, IplImage* display)
 	else
 		copyDisplay = cvCreateImage(  cvSize(display->height,display->width),8, 3 );
 	maxVal=maxVal*100;
-	if(maxVal>70)
+	if(maxVal>80)
 	{
 		float angle = returnMarkerRotation * 90;	
 		Rotate(display,angle,copyDisplay, cvGetSize(display));
