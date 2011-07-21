@@ -7,7 +7,6 @@
 bool Initialize()
 {
 	time(&start);
-	displayMode=0;
 	capture = cvCaptureFromCAM( 0 );
 	if(!capture)
 		return false;
@@ -54,12 +53,22 @@ IplImage* GetVideoFrame()
 
 void Threshold(IplImage *input)
 {
+	
 	if(!thresh)
 		thresh = cvCreateImage( cvSize(input->width, input->height), 8, 1 );
 	if(!gray)
 		gray = cvCreateImage( cvSize(input->width, input->height), 8, 1 );
 	cvCvtColor(input,gray,CV_BGR2GRAY);
-	cvAdaptiveThreshold(gray, thresh, 255, CV_THRESH_BINARY, CV_ADAPTIVE_THRESH_MEAN_C, 251, 5);
+	//int h_bins = 30, s_bins = 32;
+	//int hist_size[] = { h_bins, s_bins };
+	//float h_ranges[] = { 0, 180 }; // hue is [0,180]
+	//float s_ranges[] = { 0, 255 };
+	//float* ranges[] = { h_ranges, s_ranges };
+	//cvCalcBackProject(input,thresh, cvCreateHist(2,hist_size,CV_HIST_ARRAY,ranges,1));
+	cvThreshold(gray, thresh, 51 ,255,CV_THRESH_BINARY);
+
+	//cvAdaptiveThreshold(gray, thresh, 255, CV_THRESH_BINARY, CV_ADAPTIVE_THRESH_GAUSSIAN_C, 251, 5);
+	//cvNot(thresh,thresh);
 	cvShowImage( "Threshold", thresh );
 }
 
@@ -84,7 +93,7 @@ void VisualizeSquares(IplImage* input,int angle, IplImage* display)
 	else
 		copyDisplay = cvCreateImage(  cvSize(display->height,display->width),8, 3 );
 	maxVal=maxVal*100;
-	if(maxVal>80)
+	if(maxVal>accuracy)
 	{
 		float angle = returnMarkerRotation * 90;	
 		Rotate(display,angle,copyDisplay, cvGetSize(display));
@@ -101,23 +110,23 @@ double MatchMarkers(IplImage *input)
 	double maxVal=0, minVal=0;
 	//template matching
 	cvZero(imgResult);
-	cvMatchTemplate(input, imgTemplate0, imgResult, CV_TM_CCORR_NORMED);
+	cvMatchTemplate(input, imgTemplate0, imgResult, CV_TM_CCOEFF_NORMED);
 	CvPoint minLoc, maxLoc;
 	//finding max match value
 	cvMinMaxLoc(imgResult, &minVal, &MaxVal[0], &minLoc, &maxLoc);
 
 	cvZero(imgResult);
-	cvMatchTemplate(input, imgTemplate1, imgResult, CV_TM_CCORR_NORMED);
+	cvMatchTemplate(input, imgTemplate1, imgResult,CV_TM_CCOEFF_NORMED);
 	//finding max match value
 	cvMinMaxLoc(imgResult, &minVal, &MaxVal[1], &minLoc, &maxLoc);
 
 	cvZero(imgResult);
-	cvMatchTemplate(input, imgTemplate2, imgResult, CV_TM_CCORR_NORMED);
+	cvMatchTemplate(input, imgTemplate2, imgResult, CV_TM_CCOEFF_NORMED);
 	//finding max match value
 	cvMinMaxLoc(imgResult, &minVal, &MaxVal[2], &minLoc, &maxLoc);
 
 	cvZero(imgResult);
-	cvMatchTemplate(input, imgTemplate3, imgResult, CV_TM_CCORR_NORMED);
+	cvMatchTemplate(input, imgTemplate3, imgResult, CV_TM_CCOEFF_NORMED);
 	//finding max match value
 	cvMinMaxLoc(imgResult, &minVal, &MaxVal[3], &minLoc, &maxLoc);
 
@@ -192,7 +201,7 @@ void DetectSquares( IplImage* input, CvSeq* squares )
 	double tmp=0;
 	CvRect boundbox;
 	maxVal=0;
-	IplImage* Result = cvCreateImage( markerSize, 8,1);
+	IplImage* Result = cvCreateImage( templateSize, 8,1);
 	// read 4 sequence elements at a time (all vertices of a square)
 	for(int i = 0; i < squares->total; i += 4)
 	{
@@ -240,13 +249,15 @@ void DetectSquares( IplImage* input, CvSeq* squares )
 		cvResetImageROI(thresh);
 		// draw the square as a closed polyline (for debug purposes only)
 		// cvPolyLine( input, &rectangle, &count, 1, 1, CV_RGB(0,255,0), 3, CV_AA, 0 );
-
-		tmp = MatchMarkers(imgProc);
+		cvSetImageROI(imgProc, cvRect(templateFrame, templateFrame, templateSide, templateSide));
+		cvCopy(imgProc, Result, NULL);
+		cvShowImage( "Process", Result);
+		tmp = MatchMarkers(Result);
+		cvResetImageROI(imgProc);
 		if(maxVal < tmp )
 		{
 			maxVal = tmp;
 			returnMarkerRotation = markerRotation;
-			cvCopyImage(imgProc, Result);
 			finalSquare[0] = corners[0];
 			finalSquare[1] = corners[1];
 			finalSquare[2] = corners[2];
@@ -262,7 +273,7 @@ void DetectSquares( IplImage* input, CvSeq* squares )
 void Crop(CvPoint2D32f* squareCorners, CvRect* boundbox)
 {
 		float cornersx[4],cornersy[4];
-		int minx=1000,maxx=0,miny=1000,maxy=0;
+		int minx=5000,maxx=0,miny=5000,maxy=0;
 
 		for (int j=0;j<4;j++)
 		{
@@ -346,14 +357,19 @@ void Visualize(IplImage* input, IplImage* imgDisplay2, CvPoint corners[4])
 void LoadTemplates()
 {
 	imgDisplay = cvLoadImage("..\\Images\\image.jpg",1);
-	imgTemplate0 = cvLoadImage("..\\Images\\marker.jpg", 0);
-	imgTemplate1 = cvCreateImage( markerSize,8, 1 );
-	imgTemplate2  = cvCreateImage( markerSize,8, 1 );
-	imgTemplate3  = cvCreateImage( markerSize,8, 1 );
-	Rotate(imgTemplate0, 90, imgTemplate1,markerSize);
-	Rotate(imgTemplate0, 180, imgTemplate2,markerSize);
-	Rotate(imgTemplate0, 270, imgTemplate3,markerSize);
-	//  cvShowImage("Display", imgDisplay);
+	imgTemplate = cvLoadImage("..\\Images\\marker.jpg", 0);
+	imgTemplate0 = cvCreateImage( templateSize,8, 1 );
+	cvSetImageROI(imgTemplate, cvRect(templateFrame, templateFrame, templateSide, templateSide));
+	cvCopy(imgTemplate, imgTemplate0, NULL);
+	cvResetImageROI(imgTemplate);
+	cvReleaseImage(&imgTemplate);
+	imgTemplate1 = cvCreateImage( templateSize,8, 1 );
+	imgTemplate2  = cvCreateImage( templateSize,8, 1 );
+	imgTemplate3  = cvCreateImage( templateSize,8, 1 );
+	Rotate(imgTemplate0, 90, imgTemplate1,templateSize);
+	Rotate(imgTemplate0, 180, imgTemplate2,templateSize);
+	Rotate(imgTemplate0, 270, imgTemplate3,templateSize);
+	  cvShowImage("Template", imgTemplate0);
 }
 
 void Rotate(IplImage * input, float angle, IplImage * output, CvSize sizeRotated)
