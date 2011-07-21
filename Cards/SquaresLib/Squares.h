@@ -20,6 +20,7 @@ IplImage		*gray;
 IplImage		*thresh;
 IplImage		*threshCont;
 IplImage		*imgProc;
+
 IplImage		*imgMatchResult;
 CvMemStorage	*storage;
 IplImage		*imgResult = cvCreateImage(cvSize(1, 1),  IPL_DEPTH_32F, 1);
@@ -27,14 +28,21 @@ IplImage		*imgResult = cvCreateImage(cvSize(1, 1),  IPL_DEPTH_32F, 1);
 IplImage		*vidFrame;
 IplImage		*vidFrame2;
 IplImage		*imgDisplay;
+IplImage		*imgTemplate;
 IplImage		*imgTemplate0;
 IplImage		*imgTemplate1;
 IplImage		*imgTemplate2;
 IplImage		*imgTemplate3;
 
+//Parameters
+bool			displayMode = 0;
+int				accuracy = 50;
 int				count = 4;
+int				templateFrame = 15;
 int				markerSide = 100;
+int				templateSide = markerSide-(2*templateFrame);
 CvSize			markerSize = cvSize(markerSide,markerSide);
+CvSize			templateSize = cvSize(templateSide,templateSide);
 //CvSize			testSize = cvSize(300,300);
 double			maxVal;
 int				markerRotation;
@@ -44,7 +52,6 @@ CvSeq			*contours;
 CvSeq			*contoursResult;
 CvSeq			*squares;
 bool			show;
-bool			displayMode;
 
 // Externals //
 extern "C" __declspec(dllexport) bool Initialize();
