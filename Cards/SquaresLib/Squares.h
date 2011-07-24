@@ -35,7 +35,7 @@ IplImage		*imgTemplate2;
 IplImage		*imgTemplate3;
 
 //Parameters
-bool			displayMode = 0;
+bool			displayMode = 1;
 int				accuracy = 50;
 int				count = 4;
 int				templateFrame = 15;
