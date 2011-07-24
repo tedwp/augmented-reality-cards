@@ -11,7 +11,7 @@ bool Initialize()
 	if(!capture)
 		return false;
 
-	vidCapture = cvCreateFileCapture("..\\Images\\trailer2.mpg");
+	vidCapture = cvCreateFileCapture("..\\Images\\movie.mov");
 	if(!vidCapture)
 		return false;
 
@@ -59,12 +59,6 @@ void Threshold(IplImage *input)
 	if(!gray)
 		gray = cvCreateImage( cvSize(input->width, input->height), 8, 1 );
 	cvCvtColor(input,gray,CV_BGR2GRAY);
-	//int h_bins = 30, s_bins = 32;
-	//int hist_size[] = { h_bins, s_bins };
-	//float h_ranges[] = { 0, 180 }; // hue is [0,180]
-	//float s_ranges[] = { 0, 255 };
-	//float* ranges[] = { h_ranges, s_ranges };
-	//cvCalcBackProject(input,thresh, cvCreateHist(2,hist_size,CV_HIST_ARRAY,ranges,1));
 	cvThreshold(gray, thresh, 51 ,255,CV_THRESH_BINARY);
 
 	//cvAdaptiveThreshold(gray, thresh, 255, CV_THRESH_BINARY, CV_ADAPTIVE_THRESH_GAUSSIAN_C, 251, 5);
