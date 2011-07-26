@@ -13,13 +13,32 @@ int counter = 0;
 double sec;
 extern "C" __declspec(dllexport) void GetFPS();
 
+//Parameters
+int				threshSize = 0;
+CvRect			boundboxlast;
+bool			displayMode = 0;
+int				accuracy = 50;
+int				count = 4;
+int				templateFrame = 15;
+int				markerSide = 100;
+//CvSize			testSize = cvSize(300,300);
+//Eval Parameters
+int				templateSide = markerSide-(2*templateFrame);
+CvSize			markerSize = cvSize(markerSide,markerSide);
+CvSize			templateSize = cvSize(templateSide,templateSide);
+
+
 CvCapture		*capture;
 CvCapture		*vidCapture;
 IplImage		*frame;
 IplImage		*gray;
 IplImage		*thresh;
 IplImage		*threshCont;
-IplImage		*imgProc;
+IplImage		*Result = cvCreateImage( templateSize, 8,1);
+IplImage		*imgProc = cvCreateImage(markerSize, 8, 3 );
+IplImage		*imgProcGray = cvCreateImage( templateSize,8,1);
+IplImage		*imgProcThresh = cvCreateImage( templateSize,8,1);
+IplImage		*imgProcFinal = cvCreateImage( templateSize,8,1);
 
 IplImage		*imgMatchResult;
 CvMemStorage	*storage;
@@ -34,16 +53,7 @@ IplImage		*imgTemplate1;
 IplImage		*imgTemplate2;
 IplImage		*imgTemplate3;
 
-//Parameters
-bool			displayMode = 1;
-int				accuracy = 50;
-int				count = 4;
-int				templateFrame = 15;
-int				markerSide = 100;
-int				templateSide = markerSide-(2*templateFrame);
-CvSize			markerSize = cvSize(markerSide,markerSide);
-CvSize			templateSize = cvSize(templateSide,templateSide);
-//CvSize			testSize = cvSize(300,300);
+
 double			maxVal;
 int				markerRotation;
 int				returnMarkerRotation;
@@ -51,7 +61,7 @@ CvPoint			finalSquare[4];
 CvSeq			*contours;
 CvSeq			*contoursResult;
 CvSeq			*squares;
-bool			show;
+
 
 // Externals //
 extern "C" __declspec(dllexport) bool Initialize();

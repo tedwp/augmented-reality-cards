@@ -18,7 +18,7 @@ bool Initialize()
 	cvNamedWindow( "Display", CV_WINDOW_AUTOSIZE );
 	cvNamedWindow( "Threshold", CV_WINDOW_AUTOSIZE );
 	cvNamedWindow( "Processing", CV_WINDOW_AUTOSIZE );
-	show = true;
+	cvNamedWindow( "Template", CV_WINDOW_AUTOSIZE );
 
 	//optional camera input resize
 	cvSetCaptureProperty( capture, CV_CAP_PROP_FRAME_WIDTH, 640 );
@@ -59,17 +59,26 @@ void Threshold(IplImage *input)
 	if(!gray)
 		gray = cvCreateImage( cvSize(input->width, input->height), 8, 1 );
 	cvCvtColor(input,gray,CV_BGR2GRAY);
-	cvThreshold(gray, thresh, 51 ,255,CV_THRESH_BINARY);
+	//cvThreshold(gray, thresh, 51 ,255,CV_THRESH_BINARY);
 
-	//cvAdaptiveThreshold(gray, thresh, 255, CV_THRESH_BINARY, CV_ADAPTIVE_THRESH_GAUSSIAN_C, 251, 5);
-	//cvNot(thresh,thresh);
+	double ratio = (threshSize/(double)input->height);
+	threshSize =5+((int)( ratio*15)*2);
+
+	if(threshSize<15)
+		threshSize=15;
+	cvAdaptiveThreshold(gray, thresh, 255, CV_THRESH_BINARY, CV_ADAPTIVE_THRESH_GAUSSIAN_C, threshSize, 5);
+	
+	//cvMorphologyEx(thresh,thresh,temp,NULL,CV_MOP_OPEN,1);
+
+	cvNot(thresh,thresh);
+
 	cvShowImage( "Threshold", thresh );
 }
 
 void Detect()
 {
 	Threshold(GetFrame());
-	FindContours(thresh, 5);
+	FindContours(thresh, 7);
 	DetectSquares(frame,squares);
 	if(displayMode==0)
 		VisualizeSquares(frame,returnMarkerRotation,imgDisplay);
@@ -185,17 +194,12 @@ void DetectSquares( IplImage* input, CvSeq* squares )
 {
 	CvSeqReader reader;
 	cvStartReadSeq( squares, &reader, 0 );
-	//system("cls");
-
-
 	CvMat* warp_matrix = cvCreateMat(3,3,CV_32FC1);
 	CvPoint2D32f squareCorners[4],procCorners[4];
-	if(!imgProc)
-		imgProc = cvCreateImage(markerSize, 8, 1 );
 	double tmp=0;
 	CvRect boundbox;
 	maxVal=0;
-	IplImage* Result = cvCreateImage( templateSize, 8,1);
+
 	// read 4 sequence elements at a time (all vertices of a square)
 	for(int i = 0; i < squares->total; i += 4)
 	{
@@ -233,18 +237,17 @@ void DetectSquares( IplImage* input, CvSeq* squares )
 		// Square transforming to processed image using warp matrix	
 		
 		Crop(squareCorners,&boundbox);
-
-		cvSetImageROI(thresh,boundbox);
-		//cvShowImage( "Proc", thresh);
-
 		cvGetPerspectiveTransform(squareCorners,procCorners,warp_matrix);
-		cvZero(imgProc); 		
-		cvWarpPerspective( thresh, imgProc, warp_matrix);
-		cvResetImageROI(thresh);
-		// draw the square as a closed polyline (for debug purposes only)
-		// cvPolyLine( input, &rectangle, &count, 1, 1, CV_RGB(0,255,0), 3, CV_AA, 0 );
+		cvSetImageROI(frame,boundbox);
+		cvWarpPerspective( frame, imgProc, warp_matrix);
+		cvResetImageROI(frame);
+
+
 		cvSetImageROI(imgProc, cvRect(templateFrame, templateFrame, templateSide, templateSide));
-		cvCopy(imgProc, Result, NULL);
+		cvCvtColor(imgProc,imgProcGray,CV_BGR2GRAY);
+		cvAdaptiveThreshold(imgProcGray, imgProcThresh, 255, CV_THRESH_BINARY, CV_ADAPTIVE_THRESH_GAUSSIAN_C, 151, 1);
+		cvNot(imgProcThresh,imgProcThresh);
+		cvCopy(imgProcThresh, Result, NULL);
 		cvShowImage( "Process", Result);
 		tmp = MatchMarkers(Result);
 		cvResetImageROI(imgProc);
@@ -256,11 +259,17 @@ void DetectSquares( IplImage* input, CvSeq* squares )
 			finalSquare[1] = corners[1];
 			finalSquare[2] = corners[2];
 			finalSquare[3] = corners[3];
+			boundboxlast=boundbox;
 		}
 	}
+
+	if(boundbox.height>boundbox.height)
+		threshSize = boundboxlast.height;
+	else
+		threshSize = boundboxlast.width;
+
 	cvShowImage( "Processing", imgProc);
 	cvReleaseMat(&warp_matrix);
-	cvReleaseImage(&Result);
 }
 
 
@@ -363,7 +372,7 @@ void LoadTemplates()
 	Rotate(imgTemplate0, 90, imgTemplate1,templateSize);
 	Rotate(imgTemplate0, 180, imgTemplate2,templateSize);
 	Rotate(imgTemplate0, 270, imgTemplate3,templateSize);
-	  cvShowImage("Template", imgTemplate0);
+	cvShowImage("Template", imgTemplate0);
 }
 
 void Rotate(IplImage * input, float angle, IplImage * output, CvSize sizeRotated)
@@ -390,11 +399,9 @@ bool Finalize()
 
 	cvReleaseCapture( &capture );
 	cvClearMemStorage( storage );
-	if(show)
-	{
-		cvDestroyWindow("Display");
-		cvDestroyWindow("Threshold");
-		cvDestroyWindow("Processing");
-	}
+	cvDestroyWindow("Display");
+	cvDestroyWindow("Threshold");
+	cvDestroyWindow("Processing");
+	cvDestroyWindow("Template");
 	return true;
 }
