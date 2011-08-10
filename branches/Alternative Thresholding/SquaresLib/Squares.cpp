@@ -59,11 +59,11 @@ void Threshold(IplImage *input)
 	if(!gray)
 		gray = cvCreateImage( cvSize(input->width, input->height), 8, 1 );
 	cvCvtColor(input,gray,CV_BGR2GRAY);
-	cvThreshold(gray, thresh, 51 ,255,CV_THRESH_BINARY);
-	//cvAdaptiveThreshold(gray, thresh, 255, CV_THRESH_BINARY, CV_ADAPTIVE_THRESH_GAUSSIAN_C, 25, 7);
+	//cvThreshold(gray, thresh, 51 ,255,CV_THRESH_BINARY);
+	cvAdaptiveThreshold(gray, thresh, 255, CV_THRESH_BINARY, CV_ADAPTIVE_THRESH_GAUSSIAN_C, 15, 2);
 	//cvErode(thresh,thresh,0,1);
 	//cvDilate(thresh,thresh,0,1);
-	//cvNot(thresh,thresh);
+	cvNot(thresh,thresh);
 	cvShowImage( "Threshold", thresh );
 }
 
@@ -234,22 +234,37 @@ void DetectSquares( IplImage* input, CvSeq* squares )
 		// Square transforming to processed image using warp matrix	
 		
 		Crop(squareCorners,&boundbox);
+
+		//cvSetImageROI(thresh,boundbox);
+		//cvGetPerspectiveTransform(squareCorners,procCorners,warp_matrix);
+		//cvZero(imgProc); 		
+		//cvWarpPerspective( thresh, imgProc, warp_matrix);
+		//cvResetImageROI(thresh);
+
+
 		cvSetImageROI(frame,boundbox);
 		gray2 = cvCreateImage( cvSize(boundbox.width, boundbox.height), 8, 1 );
 		thresh2 = cvCreateImage( cvSize(boundbox.width, boundbox.height), 8, 1 );
 		cvCvtColor(frame,gray2,CV_BGR2GRAY);
 		cvResetImageROI(frame);
-		cvAdaptiveThreshold(gray2, thresh2, 255, CV_THRESH_BINARY, CV_ADAPTIVE_THRESH_GAUSSIAN_C, 251, 8);
-		cvNot(thresh2,thresh2);
-		//cvShowImage( "Proc", thresh2);
+		
+		cvAdaptiveThreshold(gray2, thresh2, 255, CV_THRESH_BINARY, CV_ADAPTIVE_THRESH_MEAN_C, 151, 3);
+		//cvNot(thresh2,thresh2);
+
+		cvShowImage( "Proc", thresh2);
 
 		cvGetPerspectiveTransform(squareCorners,procCorners,warp_matrix);
 		cvZero(imgProc); 		
 		cvWarpPerspective( thresh2, imgProc, warp_matrix);
-		// draw the square as a closed polyline (for debug purposes only)
-		 cvPolyLine( input, &rectangle, &count, 1, 1, CV_RGB(0,255,0), 3, CV_AA, 0 );
+
+		 //cvPolyLine( input, &rectangle, &count, 1, 1, CV_RGB(0,255,0), 3, CV_AA, 0 );
 		cvSetImageROI(imgProc, cvRect(templateFrame, templateFrame, templateSide, templateSide));
 		cvCopy(imgProc, Result, NULL);
+		tmp = MatchMarkers(Result);
+		cvResetImageROI(imgProc);
+				cvSetImageROI(imgProc, cvRect(templateFrame, templateFrame, templateSide, templateSide));
+		cvCopy(imgProc, Result, NULL);
+		cvShowImage( "Process", Result);
 		tmp = MatchMarkers(Result);
 		cvResetImageROI(imgProc);
 		if(maxVal < tmp )
