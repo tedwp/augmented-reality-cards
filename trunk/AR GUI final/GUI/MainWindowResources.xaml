@@ -1,0 +1,15 @@
+﻿<!-- 
+This resource dictionary is used by the MainWindow. 
+-->
+<ResourceDictionary
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:vm="clr-namespace:GUI.ViewModel"
+  xmlns:vw="clr-namespace:GUI.View"
+  >
+
+    <DataTemplate DataType="{x:Type vm:CommandViewModel}">
+        <vw:DisplayControl />
+    </DataTemplate>
+
+</ResourceDictionary>
