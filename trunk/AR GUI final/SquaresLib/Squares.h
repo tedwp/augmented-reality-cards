@@ -17,11 +17,12 @@ extern "C" __declspec(dllexport) double GetFPS();
 int				threshSize = 0;
 CvRect			boundboxlast;
 bool			displayMode = 0;
-int				accuracy = 50;
+int				accuracy = 60;
 int				count = 4;
 int				templateFrame = 15;
 int				markerSide = 100;
 //CvSize			testSize = cvSize(300,300);
+
 //Eval Parameters
 int				templateSide = markerSide-(2*templateFrame);
 CvSize			markerSize = cvSize(markerSide,markerSide);
@@ -94,4 +95,4 @@ double MatchMarkers( IplImage* input);
 void VisualizeSquares(IplImage* input,int angle, IplImage* display);
 void Visualize(IplImage* input, IplImage* copyinput2, CvPoint corners[4]);
 void Crop(CvPoint2D32f* corners,CvRect* boundbox);
-void calcFPS();
+void CalcFPS();
